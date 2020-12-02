@@ -1,0 +1,50 @@
+########### 访问端口 ############
+server:
+  port: 9999
+
+########## mysql 数据库配置 ######
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/junlan?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
+    username: root
+    password: ''
+
+########### actuator依赖 #######
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+
+########### shiro配置 #######
+shiro:
+  enable: true
+  # 权限配置，List
+  anno:
+    # 排除登录登出
+    - /login,/logout
+    # 排除静态资源
+    - /static/**,/templates/**
+    # 排除Swagger
+    - /swagger-ui.html,/docs,/doc.html,/swagger-resources/**,/webjars/**,/v2/api-docs,/csrf,/v2/api-docs-ext,/null/swagger-resources/**
+    # 排除actuator
+    - /actuator/**
+    - # 排除首页
+    - /,/index.html
+    # 排除无权限页
+    - /unauthorized/**
+    # 排除测试路径
+    - /test/**
+
+  permission:
+    - /user/**
+    - /article/**
+  # 多行字符串权限配置
+  filter-chain-definitions: |
+    /resource/**=anon
+    /upload/**=anon
+    /verificationCode/**=anon
+    /enum=anon
+    /getSysUserInfo=anon
