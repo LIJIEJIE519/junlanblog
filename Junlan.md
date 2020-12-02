@@ -254,3 +254,19 @@
 
   
 
+
+## 6. 登录完善
+
+<img src="Junlan.assets/image-20201202194654155.png" alt="image-20201202194654155" style="zoom:50%;" />
+
+### 概念
+
+#### entity
+
+- entity 里的每一个字段，与数据库相对应
+
+#### VO
+
+- value object 值对象 / view object 表现层对象
+- 主要对应页面显示【HTML】的数据对象。
+- 可以和表对应，也可以不，这根据业务的需要。

@@ -2,6 +2,8 @@ package com.junlan.controller;
 
 import com.junlan.common.result.ApiResult;
 import com.junlan.mapper.user.LoginMapper;
+import com.junlan.model.vo.LoginSysUserTokenVO;
+import com.junlan.service.LoginService;
 import com.junlan.shiro.JwtUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -18,18 +20,15 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class LoginController {
 
-    @Autowired(required = false)
-    private LoginMapper loginMapper;
+    @Autowired
+    private LoginService loginService;
 
     @ApiOperation(value = "用户登录", notes = "")
     @PostMapping("/login")
-    public ApiResult<String> login(@RequestParam("username") String username,
+    public ApiResult<LoginSysUserTokenVO> login(@RequestParam("username") String username,
                            @RequestParam("password") String password) {
-
-        String realPassword = loginMapper.getPassword(username);
-        String jwtToken = JwtUtil.createToken(username);
-
-        return ApiResult.ok(jwtToken, "登录成功");
+        LoginSysUserTokenVO login = loginService.login(username, password);
+        return ApiResult.ok(login, "登录成功");
     }
 
 }

@@ -1,6 +1,10 @@
-package com.junlan.model.user;
+package com.junlan.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.Accessors;
+
+import java.io.Serializable;
 
 /**
  * @Author LJ
@@ -9,7 +13,9 @@ import lombok.Data;
  */
 
 @Data
-public class User {
+@Accessors(chain = true)
+public class SysUser implements Serializable {
+
     private Long id;
     private String username;
     private String usernick;

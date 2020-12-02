@@ -1,8 +1,8 @@
 package com.junlan.controller;
 
 import com.junlan.common.result.ApiResult;
-import com.junlan.mapper.user.UserMapper;
-import com.junlan.model.user.User;
+import com.junlan.mapper.user.SysUserMapper;
+import com.junlan.model.entity.SysUser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,12 +21,12 @@ import java.util.List;
 public class UserController {
 
     @Autowired(required = false)
-    private UserMapper userMapper;
+    private SysUserMapper sysUserMapper;
 
     @ApiOperation(value = "获取所有用户")
     @GetMapping("/getAll")
-    public ApiResult<List<User>> getAll() {
-        List<User> users = userMapper.selectList(null);
-        return ApiResult.ok(users);
+    public ApiResult<List<SysUser>> getAll() {
+        List<SysUser> sysUsers = sysUserMapper.selectList(null);
+        return ApiResult.ok(sysUsers);
     }
 }
