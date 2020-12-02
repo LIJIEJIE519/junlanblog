@@ -22,9 +22,8 @@
   package com.junlan.common.result;
   
   /**
-   * <p>
+   *
    * REST API 响应码
-   * </p>
    *
    */
   public enum ApiCode {
@@ -95,7 +94,6 @@
   ```java
   package com.junlan.common.result;
   
-  //import com.alibaba.fastjson.annotation.JSONField;
   import com.fasterxml.jackson.annotation.JsonFormat;
   import lombok.AllArgsConstructor;
   import lombok.Builder;
@@ -147,7 +145,6 @@
       /**
        * 响应时间, 时间格式化器
        */
-  //    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
       @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
       private Date time;
   
@@ -251,7 +248,7 @@
       }
   }
   ```
-
+  
   
 
 
@@ -270,3 +267,31 @@
 - value object 值对象 / view object 表现层对象
 - 主要对应页面显示【HTML】的数据对象。
 - 可以和表对应，也可以不，这根据业务的需要。
+
+
+
+## 7. 异常处理
+
+```java
+/**
+ * @Author LJ
+ * @Date 2020/12/2
+ * msg
+ */
+
+@RestControllerAdvice       // 异常处理类
+public class MyExceptionHandler {
+    /**
+     * 登录授权异常处理
+     * @param exception
+     * @return
+     */
+    @ExceptionHandler(value = AuthenticationException.class)	// 捕捉异常
+    @ResponseStatus(HttpStatus.OK)      //  标记方法或异常类，用应返回的状态
+    public ApiResult<String> authenticationExceptionHandler(AuthenticationException exception) {
+
+        return ApiResult.fail(ApiCode.AUTHENTICATION_EXCEPTION, exception.getMessage());
+    }
+}
+```
+

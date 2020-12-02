@@ -33,7 +33,7 @@ public class LoginServiceImp implements LoginService {
         SysUser sysUser = getUserByName(username);
         if (sysUser == null) {
             log.error("无该用户：{}", username);
-            throw new AuthenticationException("用户名或密码错误");
+            throw new AuthenticationException("用户名错误");
         }
         String encrypt = UserUtil.encrypt(password, sysUser.getSalt());
         if (!sysUser.getPassword().equals(encrypt)) {

@@ -20,7 +20,7 @@ import java.util.List;
 @RequestMapping("/user")
 public class UserController {
 
-    @Autowired(required = false)
+    @Autowired
     private SysUserMapper sysUserMapper;
 
     @ApiOperation(value = "获取所有用户")

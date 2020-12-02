@@ -13,7 +13,7 @@ import org.apache.ibatis.annotations.Select;
 public interface LoginMapper {
 
     @Select("SELECT password\n" +
-            "        FROM user\n" +
+            "        FROM sys_user\n" +
             "        WHERE username = #{username}")
     String getPassword(String username);
 

@@ -125,6 +125,10 @@ public class ApiResult<T> implements Serializable {
         return result(apiCode,null);
     }
 
+    public static ApiResult<String> fail(ApiCode apiCode, String message){
+        return result(apiCode, message);
+    }
+
     public static ApiResult<String> fail(String message){
         return result(ApiCode.FAIL, message,null);
 
