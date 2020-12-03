@@ -1,11 +1,13 @@
-package com.junlan.shiro;
+package com.junlan.shiro.utils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import org.apache.commons.lang3.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 /**
@@ -79,5 +81,23 @@ public class JwtUtil {
         } catch (JWTDecodeException e) {
             return null;
         }
+    }
+
+    /**
+     * 从请求参数 或 请求头中获得token
+     * @param request
+     * @return
+     */
+    public static String getToken(HttpServletRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("request不能为空");
+        }
+        //  请求头
+        String token = request.getHeader("token");
+        if (StringUtils.isBlank(token)) {
+            // 请求参数
+            token = request.getParameter("token");
+        }
+        return token;
     }
 }

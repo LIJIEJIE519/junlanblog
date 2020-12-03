@@ -1,6 +1,9 @@
 package com.junlan.shiro;
 
-import com.junlan.mapper.user.LoginMapper;
+import com.junlan.service.LoginService;
+import com.junlan.shiro.utils.JwtUtil;
+import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -11,10 +14,8 @@ import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -28,11 +29,10 @@ import java.util.Set;
 public class MyRealm extends AuthorizingRealm {
     private static final Logger log = LoggerFactory.getLogger(MyRealm.class);
 
-    private LoginMapper loginMapper;
+    private LoginService loginService;
 
-    @Autowired(required = false)
-    public MyRealm(LoginMapper loginMapper) {
-        this.loginMapper = loginMapper;
+    public MyRealm(LoginService loginService) {
+        this.loginService = loginService;
     }
 
     /**
@@ -54,30 +54,22 @@ public class MyRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        // 设置角色/权限信息
-        JwtToken jwtToken = (JwtToken) principals.getPrimaryPrincipal();
-        // 获取username
-//        String username = jwtToken.getUsername();
-
         String username = JwtUtil.getUsername(principals.toString());
-        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
-        //获得该用户角色
-        String role = loginMapper.getRoleCode(username);
-//        // 获得该角色的权限
-//        // String rolePermission = userMapper.getRolePermission(username);
-//        //获得该用户的权限
-//        Set<String> userPermission = permissionMapper.getUserPermission(username);
+        log.info("验证权限：{}", username);
+        Long roleId = loginService.getUserByName(username).getRoleId();
+        // 获得该用户角色编码
+        String rCode = loginService.getRodeCode(roleId);
+        // 获取用户权限编码
+        Set<String> pCodes = loginService.getPermissionByRodeId(roleId);
 
-        Set<String> roleSet = new HashSet<>();
-        roleSet.add(role);
-//        //设置该用户拥有的角色和权限
-        info.setRoles(roleSet);
-//        info.setStringPermissions(userPermission);
+        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+        info.setRoles(SetUtils.hashSet(rCode));
+        info.setStringPermissions(pCodes);
         return info;
     }
 
     /**
-     * 是否登录认证
+     * token验证，在进行登录
      *
      * @param aToken
      * @return
@@ -86,25 +78,10 @@ public class MyRealm extends AuthorizingRealm {
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken aToken) throws AuthenticationException {
         log.info("验证token：{}", aToken);
-        // 校验token
-//        JwtToken jwtToken = (JwtToken) aToken;
-//        if (jwtToken == null) {
-//            throw new AuthenticationException("jwtToken不能为空");
-//        }
-//        String username = jwtToken.getUsername();
-
         String token = (String) aToken.getCredentials();
-        // 解密获得username，用于和数据库进行对比
-        String username = JwtUtil.getUsername(token);
-        if (username == null || !JwtUtil.verify(token, username)) {
-            throw new AuthenticationException("token认证失败！");
-        }
-        String password = loginMapper.getPassword(username);
-        if (password == null) {
-            throw new AuthenticationException("该用户不存在！");
+        if (StringUtils.isBlank(token)) {
+            throw new AuthenticationException("token不能为空");
         }
         return new SimpleAuthenticationInfo(token, token, getName());
     }
-
-
 }

@@ -1,14 +1,6 @@
 package com.junlan;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.junlan.utils.UserUtil;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.Accessors;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Date;
 
 /**
  * @Author LJ

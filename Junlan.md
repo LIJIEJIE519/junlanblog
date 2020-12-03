@@ -1,4 +1,4 @@
-# Junlan
+# 小俊兰博客
 
 # 开始步骤
 
@@ -256,7 +256,7 @@
 
 <img src="Junlan.assets/image-20201202194654155.png" alt="image-20201202194654155" style="zoom:50%;" />
 
-### 概念
+### 6.1 概念
 
 #### entity
 
@@ -267,6 +267,318 @@
 - value object 值对象 / view object 表现层对象
 - 主要对应页面显示【HTML】的数据对象。
 - 可以和表对应，也可以不，这根据业务的需要。
+
+### 6.2 角色权限处理
+
+- 实体类POJO
+
+  ```java
+  /**
+   * @Author LJ
+   * @Date 2020/12/3
+   * msg 系统角色
+   */
+  
+  @Data   // lombok
+  @Accessors(chain = true)
+  @ApiModel(value = "系统sys_role对象", description = "系统角色")
+  public class SysRole {
+  
+      @ApiModelProperty("主键")
+      @NotNull(message = "不能为空")
+      private Long id;
+  
+      @ApiModelProperty(value = "角色唯一编码")
+      private String roleCode;
+  
+      @ApiModelProperty(value = "角色对应名称")
+      private String roleName;
+  }
+  
+  @Data
+  @Accessors(chain = true)
+  @ApiModel(value = "Sys_Permission对象")
+  public class SysPermission {
+  
+      @ApiModelProperty("主键")
+      @NotNull(message = "不能为空")
+      private Long id;
+  
+      @ApiModelProperty(value = "归属类型编码")
+      private String typeCode;
+  
+      @ApiModelProperty(value = "归属类型名称")
+      private String typeName;
+  
+      @ApiModelProperty(value = "权限对应编码")
+      private String permissionCode;
+  
+      @ApiModelProperty(value = "权限对应名称")
+      private String permissionName;
+  }
+  
+  @Data
+  @Accessors(chain = true)
+  @ApiModel(value = "Sys_Role_Permission对象", description = "一个角色对应多个权限")
+  public class SysRolePermission {
+  
+      @ApiModelProperty("主键")
+      @NotNull(message = "不能为空")
+      private Long id;
+  
+      @ApiModelProperty("角色ID")
+      @NotNull(message = "不能为空")
+      private Long RoleId;
+  
+      @ApiModelProperty("权限ID")
+      @NotNull(message = "不能为空")
+      private Long PermissionId;
+  }
+  ```
+
+- 在写Mapper接口 
+
+  ```java
+  /**
+   * msg Base-->mybatis-plus
+   */
+  
+  @Repository // DAO层
+  public interface SysRoleMapper extends BaseMapper<SysRole> {
+  
+  }
+  ```
+
+  - Mapper 对多多多 **xml**编写
+
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <mapper namespace="com.junlan.mapper.SysPermissionMapper">
+    
+        <select id="getPermissionCodesByRoleId" resultType="java.lang.String">
+            select p.permission_code
+            from sys_role r
+                     inner join sys_role_permission rp
+                                on r.id = rp.role_id
+                     inner join sys_permission p
+                                on rp.permission_id = p.id
+            where r.id = #{roleId};
+        </select>
+    </mapper>
+    ```
+
+    
+
+- 写Service接口及其实现
+
+  ```java
+  /**
+   * msg   IService --> mybatis-plus:
+   */
+  public interface SysRoleService extends IService<SysRole> {
+  }
+  
+  /**
+   * msg   mybatis-plus -- > ServiceImpl
+   */
+  @Service	
+  public class SysRoleServiceImp extends ServiceImpl<SysRoleMapper, SysRole>
+          implements SysRoleService {
+  }
+  
+  /**
+   * msg 角色权限实现类
+   */
+  @Service
+  public class SysRolePermissionServiceImp extends ServiceImpl<SysRolePermissionMapper, SysRolePermission>
+          implements SysRolePermissionService {
+  
+      @Autowired
+      private SysPermissionMapper sysPermissionMapper;
+  
+      @Autowired
+      private SysRolePermissionMapper sysRolePermissionMapper;
+  
+      @Override
+      public List<Long> getPermissionIdsByRoleId(Long roleId) {
+           Wrapper wrapper = lambdaQuery()
+                  .select(SysRolePermission::getId)
+                  .eq(SysRolePermission::getRoleId, roleId)
+                  .getWrapper();
+           return sysRolePermissionMapper.selectObjs(wrapper);
+      }
+  
+      @Override
+      public Set<String> getPermissionCodesByRoleId(Long roleId) {
+          return sysPermissionMapper.getPermissionCodesByRoleId(roleId);
+      }
+  }
+  ```
+
+- `LoginServiceImp`完善
+
+  ```java
+  @Slf4j
+  @Service
+  public class LoginServiceImp implements LoginService {
+  
+      @Autowired
+      private SysUserMapper sysUserMapper;
+  
+      @Autowired
+      private SysRoleService sysRoleService;
+  
+      @Autowired
+      private SysRolePermissionService sysRolePermissionService;
+  
+      @Override
+      public LoginSysUserTokenVO login(String username, String password) throws Exception{
+          SysUser sysUser = getUserByName(username);
+          if (sysUser == null) {
+              log.error("无该用户：{}", username);
+              throw new AuthenticationException("用户名错误");
+          }
+          String encrypt = UserUtil.encrypt(password, sysUser.getSalt());
+          if (!sysUser.getPassword().equals(encrypt)) {
+              throw new AuthenticationException("用户名或密码错误");
+          }
+  
+          // 系统对象 转 登录对象VO
+          LoginSysUserVO loginSysUserVO = new LoginSysUserVO()
+                  .setId(sysUser.getId()).setUsername(sysUser.getUsername())
+                  .setUsernick(sysUser.getUsernick()).setRoleId(sysUser.getRoleId());
+  
+          // 获取登录对象角色并设置
+          SysRole sysRole = sysRoleService.getById(sysUser.getRoleId());
+          loginSysUserVO.setRoleId(sysRole.getId())
+                  .setRoleCode(sysRole.getRoleCode())
+                  .setRoleName(sysRole.getRoleName());
+  
+          // 获取登录对象权限编码并设置
+          Set<String> sysCodes = sysRolePermissionService.getPermissionCodesByRoleId(sysUser.getRoleId());
+          loginSysUserVO.setPermissionCodes(sysCodes);
+  
+  
+          // 生成token
+          String token = JwtUtil.createToken(username);
+          // 返回token和登录用户信息对象
+          LoginSysUserTokenVO loginSysUserTokenVo = new LoginSysUserTokenVO()
+                  .setToken(token)
+                  .setLoginSysUserVO(loginSysUserVO);
+          return loginSysUserTokenVo;
+      }
+  
+      @Override
+      public void logout(HttpServletRequest request) {
+          Subject subject = SecurityUtils.getSubject();
+          subject.logout();
+  
+          String token = JwtUtil.getToken(request);
+          final String username = JwtUtil.getUsername(token);
+          log.info("登出成功，username: {}", username);
+      }
+  
+      /**
+       * 根据用户名获取用户
+       * @param username
+       * @return
+       */
+      @Override
+      public SysUser getUserByName(String username) {
+          return sysUserMapper.selectOne(new QueryWrapper<SysUser>()
+                  .lambda().eq(SysUser::getUsername, username));
+      }
+  
+      @Override
+      public String getRodeCode(Long roleId) {
+          return sysRoleService.getById(roleId).getRoleCode();
+      }
+  
+      @Override
+      public Set<String> getPermissionByRodeId(Long roleId) {
+          return sysRolePermissionService.getPermissionCodesByRoleId(roleId);
+      }
+  }
+  ```
+
+- Shiro-->MyRealm完善
+
+  ```java
+  /**
+   *
+   * @Author LJ
+   * @Date 2020/11/28
+   * 3. Shiro 登录权限配置
+   */
+  
+  @Component
+  public class MyRealm extends AuthorizingRealm {
+      private static final Logger log = LoggerFactory.getLogger(MyRealm.class);
+  
+      private LoginService loginService;
+  
+      public MyRealm(LoginService loginService) {
+          this.loginService = loginService;
+      }
+  
+      /**
+       * 仅支持JwtToken类型的Token，即需实现AuthenticationToken
+       *
+       * @param token
+       * @return
+       */
+      @Override
+      public boolean supports(AuthenticationToken token) {
+          return token != null && token instanceof JwtToken;
+      }
+  
+      /**
+       * 授权认证,设置角色/权限信息，只有当需要检测用户权限的时候才会调用此方法
+       *
+       * @param principals
+       * @return
+       */
+      @Override
+      protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+          String username = JwtUtil.getUsername(principals.toString());
+          log.info("验证权限：{}", username);
+          Long roleId = loginService.getUserByName(username).getRoleId();
+          // 获得该用户角色编码
+          String rCode = loginService.getRodeCode(roleId);
+          // 获取用户权限编码
+          Set<String> pCodes = loginService.getPermissionByRodeId(roleId);
+  
+          SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+          info.setRoles(SetUtils.hashSet(rCode));
+          info.setStringPermissions(pCodes);
+          return info;
+      }
+  
+      /**
+       * token验证，在进行登录
+       *
+       * @param aToken
+       * @return
+       * @throws AuthenticationException
+       */
+      @Override
+      protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken aToken) throws AuthenticationException {
+          log.info("验证token：{}", aToken);
+          String token = (String) aToken.getCredentials();
+          if (StringUtils.isBlank(token)) {
+              throw new AuthenticationException("token不能为空");
+          }
+          return new SimpleAuthenticationInfo(token, token, getName());
+      }
+  }
+  ```
+
+  <img src="Junlan.assets/image-20201203235856605.png" alt="image-20201203235856605" style="zoom:50%;" />
+
+  
+
+
 
 
 

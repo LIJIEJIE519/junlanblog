@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @Author LJ
  * @Date 2020/12/1
- * msg Shiro 配置映射类
+ * msg Shiro 配置映射类，配置yaml的
  */
 
 @Data

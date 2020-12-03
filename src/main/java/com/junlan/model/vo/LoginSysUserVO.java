@@ -3,6 +3,8 @@ package com.junlan.model.vo;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.util.Set;
+
 /**
  * @Author LJ
  * @Date 2020/12/2
@@ -19,4 +21,10 @@ public class LoginSysUserVO {
     private String usernick;
 
     private Long roleId;
+
+    private String roleCode;
+
+    private String roleName;
+
+    private Set<String> permissionCodes;
 }

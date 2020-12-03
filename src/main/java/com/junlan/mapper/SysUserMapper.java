@@ -1,4 +1,4 @@
-package com.junlan.mapper.user;
+package com.junlan.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.junlan.model.entity.SysUser;

@@ -28,7 +28,18 @@ public class MyExceptionHandler {
     @ExceptionHandler(value = AuthenticationException.class)
     @ResponseStatus(HttpStatus.OK)      //  标记方法或异常类，用应返回的状态
     public ApiResult<String> authenticationExceptionHandler(AuthenticationException exception) {
-
         return ApiResult.fail(ApiCode.AUTHENTICATION_EXCEPTION, exception.getMessage());
+    }
+
+    /**
+     * 默认的异常处理
+     *
+     * @param exception
+     * @return
+     */
+//    @ExceptionHandler(value = Exception.class)
+//    @ResponseStatus(HttpStatus.OK)
+    public ApiResult<String> exceptionHandler(Exception exception) {
+        return ApiResult.fail(ApiCode.SYSTEM_EXCEPTION, exception.getMessage());
     }
 }
