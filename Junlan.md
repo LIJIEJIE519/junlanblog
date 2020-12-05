@@ -1,4 +1,8 @@
-### 小俊兰博客
+[TOC]
+
+
+
+# 小俊兰博客
 
 # 开始步骤
 
@@ -8,11 +12,11 @@ https://swagger.io/
 
 https://www.cnblogs.com/water-1/p/10820235.html
 
-### Springfox swagger
+## Springfox swagger
 
 https://github.com/springfox/springfox-demos
 
-### 1. 依赖
+## 1. 依赖
 
 ```xml
 <!-- swagger2 依赖 -->
@@ -30,7 +34,7 @@ https://github.com/springfox/springfox-demos
 </dependency>
 ```
 
-### 2. 配置config
+## 2. 配置config
 
 ```java
 @Configuration
@@ -67,13 +71,13 @@ public class JunlanApplication {
 }
 ```
 
-### 3. 访问
+## 3. 访问
 
 http://localhost:8080/swagger-ui.html
 
 ![image-20201126145630370](Junlan.assets/image-20201126145630370.png)
 
-### 4. 注解
+## 4. 注解
 
 ```java
  @Api("测试")
@@ -103,9 +107,9 @@ public @interface ApiImplicitParams {
 
 <img src="../../../Desktop/XJJ/spring/Spring.assets/image-20201130173828172.png" alt="image-20201130173828172" style="zoom:50%;" />
 
-### 5. token配置
+## 5. token配置
 
-#### 1. 指定方法配置
+### 1. 指定方法配置
 
 ```java
 @ApiImplicitParams({ @ApiImplicitParam(paramType = "header", dataType = "String",
@@ -114,7 +118,7 @@ public @interface ApiImplicitParams {
 
 
 
-#### 2. 全局配置
+### 2. 全局配置
 
 ```java
 @Configuration
@@ -1506,11 +1510,11 @@ server：
 
 ## 7.1 概念
 
-#### entity
+**entity**
 
 - entity 里的每一个字段，与数据库相对应
 
-#### VO
+**VO**
 
 - value object 值对象 / view object 表现层对象
 - 主要对应页面显示【HTML】的数据对象。

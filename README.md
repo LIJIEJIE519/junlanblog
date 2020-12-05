@@ -3,7 +3,7 @@
 
 # 提交log
 
-**博客初始化，JWT+Shiro+ApiResult+Swagger**
+**博客初始化，JWT+Shiro+Mybatis-Plus+ApiResult+Swagger**
 
 **全局异常捕获**
 
