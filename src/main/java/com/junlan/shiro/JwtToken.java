@@ -23,24 +23,14 @@ public class JwtToken implements AuthenticationToken {
 	// 登录ip
 //    private String host;
 
-//    private String username;
-//
-//    private String salt;
+    private String username;
 
     private String token;
 
-//    private Date createDate;
-//
-//    // 多长时间过期，默认一小时
-//    private long expireSecond;
-    /**
-     * 过期日期
-     */
-//    private Date expireDate;
+    private String salt;
 
-//    private String principal;
-
-//    private String credentials;
+    // 多长时间过期，默认一小时
+    private long expireSecond;
 
     public JwtToken() {}
 
@@ -58,12 +48,13 @@ public class JwtToken implements AuthenticationToken {
         return token;
     }
 
-//    public static JwtToken build(String token, String username, String salt, long expireSecond) {
-//        return new JwtToken()
-//                .setUsername(username)
-//                .setToken(token)
-//                .setSalt(salt);
-//
-//    }
+    // 为了redis缓存所用
+    public static JwtToken build(String username, String token, String salt, long expireSecond) {
+        return new JwtToken()
+                .setUsername(username)
+                .setToken(token)
+                .setSalt(salt)
+                .setExpireSecond(expireSecond);
+    }
 
 }

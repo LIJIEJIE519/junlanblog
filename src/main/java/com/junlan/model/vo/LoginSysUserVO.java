@@ -3,6 +3,7 @@ package com.junlan.model.vo;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -12,7 +13,8 @@ import java.util.Set;
  */
 @Data
 @Accessors(chain = true)
-public class LoginSysUserVO {
+public class LoginSysUserVO implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private Long id;
 

@@ -1,14 +1,17 @@
 package com.junlan.service.serviceImp;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.junlan.config.properties.JwtProperties;
 import com.junlan.mapper.SysUserMapper;
 import com.junlan.model.entity.SysRole;
 import com.junlan.model.vo.LoginSysUserTokenVO;
 import com.junlan.model.entity.SysUser;
 import com.junlan.model.vo.LoginSysUserVO;
+import com.junlan.service.LoginRedisService;
 import com.junlan.service.LoginService;
 import com.junlan.service.SysRolePermissionService;
 import com.junlan.service.SysRoleService;
+import com.junlan.shiro.JwtToken;
 import com.junlan.shiro.utils.JwtUtil;
 import com.junlan.utils.UserUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +19,7 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +28,7 @@ import java.util.Set;
 /**
  * @Author LJ
  * @Date 2020/12/2
- * msg
+ * msg  登录信息
  */
 
 @Slf4j
@@ -39,6 +43,13 @@ public class LoginServiceImp implements LoginService {
 
     @Autowired
     private SysRolePermissionService sysRolePermissionService;
+
+    @Autowired
+    private LoginRedisService loginRedisService;
+
+    // 获取秘药-过期属性
+    @Autowired
+    private JwtProperties jwtProperties;
 
     @Override
     public LoginSysUserTokenVO login(String username, String password) throws Exception{
@@ -67,14 +78,18 @@ public class LoginServiceImp implements LoginService {
         Set<String> sysCodes = sysRolePermissionService.getPermissionCodesByRoleId(sysUser.getRoleId());
         loginSysUserVO.setPermissionCodes(sysCodes);
 
-
         // 生成token
         String token = JwtUtil.createToken(username);
+        JwtToken jwtToken = JwtToken.build(username, token,
+                jwtProperties.getSecret(), jwtProperties.getExpireSecond());
+
+        // redis缓存信息
+        loginRedisService.cacheLoginInfo(jwtToken, loginSysUserVO);
+
         // 返回token和登录用户信息对象
-        LoginSysUserTokenVO loginSysUserTokenVo = new LoginSysUserTokenVO()
+        return new LoginSysUserTokenVO()
                 .setToken(token)
                 .setLoginSysUserVO(loginSysUserVO);
-        return loginSysUserTokenVo;
     }
 
     @Override

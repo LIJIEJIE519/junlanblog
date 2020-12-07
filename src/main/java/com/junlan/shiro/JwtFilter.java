@@ -2,6 +2,8 @@ package com.junlan.shiro;
 
 import com.junlan.common.result.ApiCode;
 import com.junlan.common.result.ApiResult;
+import com.junlan.config.properties.JwtProperties;
+import com.junlan.shiro.utils.JwtUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -11,6 +13,7 @@ import org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter;
 import org.apache.shiro.web.util.WebUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -30,7 +33,16 @@ import java.net.URLEncoder;
  *
  **/
 public class JwtFilter extends BasicHttpAuthenticationFilter {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    // 获取秘药-过期属性
+    private JwtProperties jwtProperties;
+
+    // 构造器注入先于@Autowired
+    public JwtFilter(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     /**
      * 是否允许访问
@@ -70,8 +82,14 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
      */
     @Override
     protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
+        // .with[username, Issuer, Audience, ExpiresAt, salt]
         String token = WebUtils.toHttp(request).getHeader("token");
-        JwtToken jwtToken = new JwtToken(token);
+        if (JwtUtil.isExpired(token)) {
+            throw new AuthenticationException("JWT Token已过期");
+        }
+
+        JwtToken jwtToken = JwtToken.build(JwtUtil.getUsername(token), token,
+                jwtProperties.getSecret(), jwtProperties.getExpireSecond());
         try {
             // 提交jwtToken给realm进行登入
             Subject subject = getSubject(request, response);
@@ -117,9 +135,10 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
         HttpServletResponse httpServletResponse = WebUtils.toHttp(response);
         // 返回401
         httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        String token = WebUtils.toHttp(request).getHeader("token");
         // 设置响应码为401或者直接输出消息
         String url = httpServletRequest.getRequestURI();
-        logger.error("访问失败 url：{}", url);
+        logger.error("访问失败 url：{}, token:{}", url, token);
         ApiResult<Boolean> apiResult = ApiResult.fail(ApiCode.UNAUTHORIZED);
 //        HttpServletResponseUtil.printJson(httpServletResponse, apiResult);
         return false;
@@ -161,14 +180,16 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
     /**
      * 将非法请求跳转到 /unauthorized/**
      */
-    private void responseError(ServletResponse response, String message) {
+    private ApiResult<String> responseError(ServletResponse response, String message) {
         try {
             HttpServletResponse httpServletResponse = (HttpServletResponse) response;
             //设置编码，否则中文字符在重定向时会变为空字符串
             message = URLEncoder.encode(message, "UTF-8");
-            httpServletResponse.sendRedirect("/unauthorized/" + message);
+            return ApiResult.fail(ApiCode.UNAUTHORIZED, message);
+//            httpServletResponse.sendRedirect("/unauthorized/" + message);
         } catch (IOException e) {
             logger.error(e.getMessage());
+            return null;
         }
     }
 }

@@ -3,6 +3,7 @@ package com.junlan.common.exception;
 import com.junlan.common.result.ApiCode;
 import com.junlan.common.result.ApiResult;
 import org.apache.shiro.authc.AuthenticationException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -30,6 +31,7 @@ public class MyExceptionHandler {
     public ApiResult<String> authenticationExceptionHandler(AuthenticationException exception) {
         return ApiResult.fail(ApiCode.AUTHENTICATION_EXCEPTION, exception.getMessage());
     }
+
 
     /**
      * 默认的异常处理

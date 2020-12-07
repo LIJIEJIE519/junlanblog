@@ -5,7 +5,11 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.junlan.config.properties.JwtProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -16,12 +20,16 @@ import java.util.Date;
  * msg JWT 生成token配置类
  */
 
+@Component
 public class JwtUtil {
 
-    // 过期时间 24 小时
-    private static final long EXPIRE_TIME = 60 * 24 * 60 * 1000;
-    // 密钥
-    private static final String SECRET = "SHIRO+JWT+JunLan";
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
+
+    private static JwtProperties jwtProperties;
+
+    public JwtUtil(JwtProperties jwtProperties) {
+        JwtUtil.jwtProperties = jwtProperties;
+    }
 
     /**
      * 生成 token
@@ -32,12 +40,16 @@ public class JwtUtil {
     public static String createToken(String username) {
         try {
             // 过期时间
-            Date expire = new Date(System.currentTimeMillis() + EXPIRE_TIME);
+            Date expire = new Date(System.currentTimeMillis() + jwtProperties.getExpireSecond());
             // 生成算法
-            Algorithm algorithm = Algorithm.HMAC256(SECRET);
+            Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getSecret());
             // 附带username信息
             return JWT.create()
                     .withClaim("username", username)
+                    // 签发人
+                    .withIssuer(jwtProperties.getIssuer())
+                    // 签发的目标
+                    .withAudience(jwtProperties.getAudience())
                     //到期时间
                     .withExpiresAt(expire)
                     //创建一个新的JWT，并使用给定的算法进行标记
@@ -56,7 +68,7 @@ public class JwtUtil {
      */
     public static boolean verify(String token, String username) {
         try {
-            Algorithm algorithm = Algorithm.HMAC256(SECRET);
+            Algorithm algorithm = Algorithm.HMAC256(jwtProperties.getSecret());
             //在token中附带了username信息
             JWTVerifier verifier = JWT.require(algorithm)
                     .withClaim("username", username)
@@ -82,6 +94,33 @@ public class JwtUtil {
             return null;
         }
     }
+
+    /**
+     * 获取过期时间
+s     */
+    public static Date getExpiresAt(String token) {
+        DecodedJWT decodedJwt = JWT.decode(token);
+        if (decodedJwt == null) {
+            return null;
+        }
+        return decodedJwt.getExpiresAt();
+    }
+
+    /**
+     * 判断token是否已过期
+     *
+     * @param token
+     * @return
+     */
+    public static boolean isExpired(String token) {
+        Date expireDate = getExpiresAt(token);
+        if (expireDate == null) {
+            return true;
+        }
+        // 期长与当前时间比较判断
+        return !expireDate.before(new Date());
+    }
+
 
     /**
      * 从请求参数 或 请求头中获得token

@@ -1859,3 +1859,171 @@ public class MyExceptionHandler {
 }
 ```
 
+# 9. Redis缓存登录信息
+
+## 9.1 LoginRedisSerivce及其实现层
+
+依赖
+
+```xml
+<!-- redis 依赖-->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+
+1. 实现层->信息写入redis
+
+   ```java
+   /**
+    * @Author LJ
+    * @Date 2020/12/6
+    * msg  Redis 登录信息缓存
+    */
+   
+   @Service
+   public class LoginRedisServiceImp implements LoginRedisService {
+   
+       private final Logger logger = LoggerFactory.getLogger(LoginRedisServiceImp.class);
+   
+       @Autowired
+       private RedisTemplate redisTemplate;
+   
+       @Autowired
+       private JwtProperties jwtProperties;
+   
+       @Override
+       public void cacheLoginInfo(JwtToken jwtToken, LoginSysUserVO loginSysUserVO) {
+           if (jwtToken == null) {
+               throw new IllegalArgumentException("jwtToken不能为空");
+           }
+           if (loginSysUserVO == null) {
+               throw new IllegalArgumentException("loginSysUserVo不能为空");
+           }
+   
+           String username = loginSysUserVO.getUsername();
+           logger.debug("redis缓存->username:{}, jToken:{}", username, jwtToken);
+           // 缓存登录信息到redis
+           // 必须加上TimeUnit.SECONDS参数，过期时间形式
+           redisTemplate.opsForValue().set(username, loginSysUserVO, jwtProperties.getExpireSecond(), TimeUnit.SECONDS);
+           redisTemplate.opsForValue().set("JwtToken", jwtToken, jwtProperties.getExpireSecond(), TimeUnit.SECONDS);
+   
+           logger.debug("LoginSysUserVO:{}", redisTemplate.opsForValue().get(username));
+           logger.debug("JwtToken:{}", redisTemplate.opsForValue().get("JwtToken"));
+       }
+   
+       @Override
+       public LoginSysUserVO getSysUserVO(String username) {
+           if (StringUtils.isBlank(username)) {
+               throw new IllegalArgumentException("username不能为空");
+           }
+           logger.info("getSysUserVO:{}", redisTemplate.opsForValue().get(username));
+           return (LoginSysUserVO) redisTemplate.opsForValue().get(username);
+       }
+   
+       /**
+        * 修改键默认序列化方式
+        * @param redisTemplate
+        */
+       @Autowired(required = false)
+       public void setRedisTemplate(RedisTemplate redisTemplate) {
+           RedisSerializer stringSerializer = new StringRedisSerializer();
+           redisTemplate.setKeySerializer(stringSerializer);
+           this.redisTemplate = redisTemplate;
+       }
+   }
+   
+   ```
+
+<img src="Junlan.assets/image-20201206213106338.png" alt="image-20201206213106338" style="zoom:50%;" />
+
+2. 登录实现层调用redis实现层使登录信息缓存到Redis
+
+## 9.2 JWT、Shiro完善
+
+1. 增加`JWT-Yaml`配置
+
+   ```yaml
+   ######### JWT ##########
+   jwt:
+     # token请求头名称
+     token-name: "token"
+     # jwt密钥
+     secret: "SHIRO+JWT+Junlan"
+     # 发行人
+     issuer: "Mr.XJJ"
+     # 观众
+     audience: "Web_Junlan"
+     # 默认过期时间1小时，单位：秒s
+     expire-second: 3600
+   ```
+
+2. `ShiroConfig`配置类
+
+   ```java
+   /*ShiroConfig 配置类过滤器注入属性配置*/
+   private Map<String, Filter> getFilterMap(JwtProperties jwtProperties) {
+     Map<String, Filter> filterMap = new LinkedHashMap<>();
+     /*
+      * 通过构造器注入属性，@Autowired在构造器之后，会出现null指针异常
+      * */
+     filterMap.put(JWT_FILTER_NAME, new JwtFilter(jwtProperties));
+     return filterMap;
+   }
+   ```
+
+3. `JwtFilter`过滤器
+
+   ```java
+   // 构造器注入先于@Autowired
+     public JwtFilter(JwtProperties jwtProperties) {
+     this.jwtProperties = jwtProperties;
+   }
+   /**
+     * 执行登陆操作, 注入【包装】JwtToken到AuthenticationToken
+     * 或者重写executeLogin调用到方法createToken，
+     */
+   @Override
+   protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
+     // .with[username, Issuer, Audience, ExpiresAt, salt]
+     String token = WebUtils.toHttp(request).getHeader("token");
+     if (JwtUtil.isExpired(token)) {
+       throw new AuthenticationException("JWT Token已过期");
+     }
+   
+     JwtToken jwtToken = JwtToken.build(JwtUtil.getUsername(token), token,
+                                        jwtProperties.getSecret(), jwtProperties.getExpireSecond());
+     try {
+       // 提交jwtToken给realm进行登入
+       Subject subject = getSubject(request, response);
+       subject.login(jwtToken);
+       return onLoginSuccess(jwtToken, subject, request, response);
+     } catch (AuthenticationException e) {
+       return onLoginFailure(jwtToken, e, request, response);
+     }
+   }
+   ```
+
+4. `MyRealm`权限redis缓存完善
+
+   ```java
+   @Override
+   protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+     String username = JwtUtil.getUsername(principals.toString());
+     log.info("验证权限：{}", username);
+     // 获取redis 缓存 VO
+     LoginSysUserVO sysUserVO = loginRedisService.getSysUserVO(username);
+     // 获得该用户角色编码
+     String rCode = sysUserVO.getRoleCode();
+     // 获取用户权限编码
+     final Set<String> pCodes = sysUserVO.getPermissionCodes();
+   
+     SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+     info.setRoles(SetUtils.hashSet(rCode));
+     info.setStringPermissions(pCodes);
+     return info;
+   }
+   ```
+
+   

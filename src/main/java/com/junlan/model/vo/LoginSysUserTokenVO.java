@@ -18,6 +18,7 @@ import java.io.Serializable;
 @ApiModel("登录用户信息TokenVO")
 @Accessors(chain = true)
 public class LoginSysUserTokenVO implements Serializable {
+    private static final long serialVersionUID = -2138450422989081056L;
 
     @ApiModelProperty("token")
     private String token;

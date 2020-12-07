@@ -2,13 +2,19 @@
 server:
   port: 9999
 
-########## mysql 数据库配置 ######
+############# 基本配置 #############
 spring:
+  ########## mysql 数据库配置 ######
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/junlan?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
     username: root
     password: ''
+
+  ######### redis 配置###########
+  redis:
+    timeout: 10s
+    connect-timeout: 5s
 
 ########### actuator依赖 #######
 management:
@@ -48,3 +54,18 @@ shiro:
     /verificationCode/**=anon
     /enum=anon
     /getSysUserInfo=anon
+
+######### JWT ##########
+jwt:
+  # token请求头名称
+  token-name: "token"
+  # jwt密钥
+  secret: "SHIRO+JWT+Junlan"
+  # 发行人
+  issuer: "Mr.XJJ"
+  # 观众
+  audience: "Web_Junlan"
+  # 默认过期时间1小时，单位：秒s
+  expire-second: 3600
+
+

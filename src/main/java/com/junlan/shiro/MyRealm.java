@@ -1,5 +1,7 @@
 package com.junlan.shiro;
 
+import com.junlan.model.vo.LoginSysUserVO;
+import com.junlan.service.LoginRedisService;
 import com.junlan.service.LoginService;
 import com.junlan.shiro.utils.JwtUtil;
 import org.apache.commons.collections4.SetUtils;
@@ -29,10 +31,10 @@ import java.util.Set;
 public class MyRealm extends AuthorizingRealm {
     private static final Logger log = LoggerFactory.getLogger(MyRealm.class);
 
-    private LoginService loginService;
+    private LoginRedisService loginRedisService;
 
-    public MyRealm(LoginService loginService) {
-        this.loginService = loginService;
+    public MyRealm(LoginRedisService loginRedisService) {
+        this.loginRedisService = loginRedisService;
     }
 
     /**
@@ -56,11 +58,12 @@ public class MyRealm extends AuthorizingRealm {
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         String username = JwtUtil.getUsername(principals.toString());
         log.info("验证权限：{}", username);
-        Long roleId = loginService.getUserByName(username).getRoleId();
+        // 获取redis 缓存 VO
+        LoginSysUserVO sysUserVO = loginRedisService.getSysUserVO(username);
         // 获得该用户角色编码
-        String rCode = loginService.getRodeCode(roleId);
+        String rCode = sysUserVO.getRoleCode();
         // 获取用户权限编码
-        Set<String> pCodes = loginService.getPermissionByRodeId(roleId);
+        final Set<String> pCodes = sysUserVO.getPermissionCodes();
 
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
         info.setRoles(SetUtils.hashSet(rCode));

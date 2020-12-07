@@ -1,6 +1,7 @@
 package com.junlan.shiro;
 
 
+import com.junlan.config.properties.JwtProperties;
 import com.junlan.config.properties.ShiroProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -49,14 +50,15 @@ public class ShiroConfig {
      */
     @Bean
     public ShiroFilterFactoryBean factory(SecurityManager securityManager,
-                                          ShiroProperties shiro) {
+                                          ShiroProperties shiroProperties,
+                                          JwtProperties jwtProperties) {
         ShiroFilterFactoryBean factoryBean = new ShiroFilterFactoryBean();
         // 1. 设置安全管理器
         factoryBean.setSecurityManager(securityManager);
-        // 2. 设置在创建setFilterChainDefinitionMap筛选器链定义时可用的筛选器
-        factoryBean.setFilters(getFilterMap());
+        // 2. 设置在创建setFilterChainDefinitionMap筛选器链定义时可用的筛选器，使用构造器注入
+        factoryBean.setFilters(getFilterMap(jwtProperties));
         // 3. 设置链定义的链名到链定义映射，以用于创建被Shiro筛选器拦截的筛选器链
-        factoryBean.setFilterChainDefinitionMap(getFilterChainDefinitionMap(shiro));
+        factoryBean.setFilterChainDefinitionMap(getFilterChainDefinitionMap(shiroProperties));
 
         // 设置无权限时跳转的 url;
         factoryBean.setUnauthorizedUrl("/user/unauthorized");
@@ -68,9 +70,12 @@ public class ShiroConfig {
      *
      * @return map
      */
-    private Map<String, Filter> getFilterMap() {
+    private Map<String, Filter> getFilterMap(JwtProperties jwtProperties) {
         Map<String, Filter> filterMap = new LinkedHashMap<>();
-        filterMap.put(JWT_FILTER_NAME, new JwtFilter());
+        /*
+        * 通过构造器注入属性，@Autowired在构造器之后，会出现null指针异常
+        * */
+        filterMap.put(JWT_FILTER_NAME, new JwtFilter(jwtProperties));
         return filterMap;
     }
 

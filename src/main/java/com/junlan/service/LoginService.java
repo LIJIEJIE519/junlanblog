@@ -4,7 +4,6 @@ import com.junlan.model.entity.SysUser;
 import com.junlan.model.vo.LoginSysUserTokenVO;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.Set;
 
 /**
