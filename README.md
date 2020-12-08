@@ -17,30 +17,34 @@
 
 # 开始步骤
 
-**详情见同级目录下Junlan.md**
+## Junlan_admin
 
-## 1. Swagger
+**详情见Junlan_admin下Junlan.md**
 
-## 2. Mybatis-Plus
+### 1. Swagger
 
-## 3. JWT
+### 2. Mybatis-Plus
 
-## 4. Shiro
+### 3. JWT
 
-## 5. yaml配置
+### 4. Shiro
 
-## 6. ApiResult
+### 5. yaml配置
 
-### 6.1 APICode
+### 6. ApiResult
 
-### 6.2. ApiResult
+#### 6.1 APICode
 
-## 7. 登录完善
+#### 6.2. ApiResult
 
-## 8. 异常处理
+### 7. 登录完善
 
-## 9. Redis缓存登录信息
+### 8. 异常处理
 
-### 9.1 LoginRedisSerivce及其实现层
+### 9. Redis缓存登录信息
 
-### 9.2 JWT、Shiro完善
+#### 9.1 LoginRedisSerivce及其实现层
+
+#### 9.2 JWT、Shiro完善
+
+### 10. 模块化
