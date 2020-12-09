@@ -3,6 +3,7 @@ package com.junlan.service.serviceImp;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.junlan.common.exception.BaseException;
+import com.junlan.common.exception.MethodArgumentException;
 import com.junlan.mapper.SysUserMapper;
 import com.junlan.model.entity.SysUser;
 import com.junlan.service.SysUserService;
@@ -30,9 +31,13 @@ public class SysUserServiceImp extends ServiceImpl<SysUserMapper, SysUser>
     @Autowired
     private SysUserMapper sysUserMapper;
 
+    // 事务处理
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveSysUser(SysUser sysUser) throws Exception {
+        if (StringUtils.isBlank(sysUser.getUsername())) {
+            throw new MethodArgumentException("username不能为空");
+        }
         if (isExistsByUsername(sysUser.getUsername())) {
             throw new BaseException("该用户已经存在，请登录");
         }
@@ -50,14 +55,25 @@ public class SysUserServiceImp extends ServiceImpl<SysUserMapper, SysUser>
         return super.save(sysUser);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateSysUser(SysUser sysUser) throws Exception {
-        return false;
+        SysUser user = getById(sysUser.getId());
+        if (user == null) {
+            throw new BaseException("用户不存在");
+        }
+
+        // 更新用户
+        user.setUsername(sysUser.getUsername())
+                .setUsernick(sysUser.getUsernick())
+                .setRoleId(sysUser.getRoleId());
+        return super.updateById(user);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean deleteSysUser(Long id) throws Exception {
-        return false;
+        return super.removeById(id);
     }
 
     @Override

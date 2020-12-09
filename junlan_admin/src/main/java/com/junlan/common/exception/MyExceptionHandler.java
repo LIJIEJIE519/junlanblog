@@ -5,6 +5,7 @@ import com.junlan.common.result.ApiCode;
 import com.junlan.common.result.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
@@ -41,24 +42,35 @@ public class MyExceptionHandler {
         return ApiResult.fail(ApiCode.AUTHENTICATION_EXCEPTION, exception.getMessage());
     }
 
+    /**
+     * shiro 权限授权异常处理
+     * @param exception
+     * @return
+     */
+    @ExceptionHandler(value = AuthorizationException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResult<String> authorizationExceptionHandler(AuthorizationException exception) {
+        return ApiResult.fail(ApiCode.UNAUTHORIZED_EXCEPTION, exception.getMessage());
+    }
+
 
     /**
      * Validator非法参数验证异常
      *
-     * @param ex
+     * @param e
      * @return
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(value = HttpStatus.OK)
-    public ApiResult<List<String>> handleMethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex) {
-        BindingResult bindingResult = ex.getBindingResult();
+    public ApiResult<List<String>> handleMethodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
+        BindingResult bindingResult = e.getBindingResult();
         List<String> list = new ArrayList<>();
         List<FieldError> fieldErrors = bindingResult.getFieldErrors();
         for (FieldError fieldError : fieldErrors) {
             list.add(fieldError.getDefaultMessage());
         }
         Collections.sort(list);
-        log.error(ApiCode.PARAMETER_EXCEPTION + ":" + JSON.toJSONString(list));
+        log.error(ApiCode.PARAMETER_EXCEPTION.getCode() + ":" + JSON.toJSONString(list));
         return ApiResult.fail(ApiCode.PARAMETER_EXCEPTION, list);
     }
 
@@ -70,7 +82,7 @@ public class MyExceptionHandler {
     @ExceptionHandler(value = BaseException.class)
     @ResponseStatus(HttpStatus.OK)      //  标记方法或异常类，用应返回的状态
     public ApiResult<String> baseExceptionHandler(BaseException exception) {
-        return ApiResult.fail(ApiCode.AUTHENTICATION_EXCEPTION, exception.getMessage());
+        return ApiResult.fail(ApiCode.PARAMETER_EXCEPTION, exception.getMessage());
     }
 
 

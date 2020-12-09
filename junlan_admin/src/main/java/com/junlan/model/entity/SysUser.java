@@ -17,7 +17,7 @@ import java.io.Serializable;
 /**
  * @Author LJ
  * @Date 2020/11/26
- * msg
+ * msg 系统用户类
  */
 
 @Data
